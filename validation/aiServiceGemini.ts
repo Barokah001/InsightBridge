@@ -15,7 +15,7 @@ async function getGeminiAI() {
   }
 
   try {
-    // @ts-expect-error - Dynamic import
+    // @ts-ignore - Dynamic import
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
     return new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
   } catch (error) {
@@ -42,7 +42,7 @@ export async function queryAI(
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
     const prompt = generatePrompt(question, formatDataForAI(data));
 
@@ -61,7 +61,7 @@ export async function queryAI(
         metadata: {
           ...parsed.metadata,
           processingTime: Date.now() - startTime,
-          modelUsed: "gemini-1.5-flash",
+          modelUsed: "gemini-1.5-pro",
         },
       };
     } catch (parseError) {
@@ -76,7 +76,7 @@ export async function queryAI(
         ],
         metadata: {
           processingTime: Date.now() - startTime,
-          modelUsed: "gemini-1.5-flash",
+          modelUsed: "gemini-1.5-pro",
         },
       };
     }

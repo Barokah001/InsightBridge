@@ -1,55 +1,54 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Sparkles, Brain, Database } from "lucide-react";
-import FileUpload from "@/components/FileUpload";
-import DataSummary from "@/components/DataSummary";
-import QuestionInput from "@/components/QuestionInput";
-import InsightDisplay from "@/components/InsightDisplay";
-import Visualization from "@/components/Visualization";
-import { detectQualityIssues } from "@/lib/dataParser";
-import { ParsedData, Question } from "@/lib/type";
-import { queryAI } from "@/validation/aiServiceGemini";
-
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Sparkles, Brain, Database } from 'lucide-react'
+import FileUpload from '@/components/FileUpload'
+import DataSummary from '@/components/DataSummary'
+import QuestionInput from '@/components/QuestionInput'
+import InsightDisplay from '@/components/InsightDisplay'
+import Visualization from '@/components/Visualization'
+import { detectQualityIssues } from '@/lib/dataParser'
+import { ParsedData, Question } from '@/lib/type'
+import { queryAI } from '@/validation/aiServiceGemini'
 
 export default function Home() {
-  const [data, setData] = useState<ParsedData | null>(null);
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [history, setHistory] = useState<Question[]>([]);
+  const [data, setData] = useState<ParsedData | null>(null)
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [history, setHistory] = useState<Question[]>([])
 
   const handleDataParsed = (parsedData: ParsedData) => {
-    setData(parsedData);
-    setCurrentQuestion(null);
-    setHistory([]);
-  };
+    setData(parsedData)
+    setCurrentQuestion(null)
+    setHistory([])
+  }
 
   const handleQuestionSubmit = async (questionText: string) => {
-    if (!data) return;
+    if (!data) return
 
-    setIsLoading(true);
+    setIsLoading(true)
     const newQuestion: Question = {
       id: Date.now().toString(),
       text: questionText,
       timestamp: new Date(),
-    };
+    }
 
-    setCurrentQuestion(newQuestion);
+    setCurrentQuestion(newQuestion)
 
     try {
-      const insight = await queryAI(questionText, data);
-      const updatedQuestion = { ...newQuestion, response: insight };
-      setCurrentQuestion(updatedQuestion);
-      setHistory((prev) => [...prev, updatedQuestion]);
+      const insight = await queryAI(questionText, data)
+      const updatedQuestion = { ...newQuestion, response: insight }
+      setCurrentQuestion(updatedQuestion)
+      setHistory(prev => [...prev, updatedQuestion])
     } catch (error) {
-      console.error("Failed to get AI response:", error);
+      console.error('Failed to get AI response:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const qualityIssues = data ? detectQualityIssues(data) : [];
+  const qualityIssues = data ? detectQualityIssues(data) : []
 
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
@@ -105,16 +104,15 @@ export default function Home() {
                   <Sparkles className="w-4 h-4" />
                   <span>Transform data into trustworthy insights</span>
                 </div>
-
+                
                 <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-100 leading-tight">
-                  Upload your data.
-                  <br />
+                  Upload your data.<br />
                   <span className="gradient-text">Ask anything.</span>
                 </h2>
-
+                
                 <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-                  Get AI-powered insights with confidence scores, visual
-                  breakdowns, and transparency you can trust.
+                  Get AI-powered insights with confidence scores, visual breakdowns,
+                  and transparency you can trust.
                 </p>
               </motion.div>
 
@@ -130,26 +128,21 @@ export default function Home() {
                 {[
                   {
                     icon: Database,
-                    title: "Smart Parsing",
-                    description:
-                      "Automatically detect types, quality issues, and patterns",
+                    title: 'Smart Parsing',
+                    description: 'Automatically detect types, quality issues, and patterns'
                   },
                   {
                     icon: Brain,
-                    title: "AI-Powered",
-                    description:
-                      "Ask questions in plain English, get structured insights",
+                    title: 'AI-Powered',
+                    description: 'Ask questions in plain English, get structured insights'
                   },
                   {
                     icon: Sparkles,
-                    title: "Confidence Scores",
-                    description: "Know when to trust AI and when to dig deeper",
-                  },
+                    title: 'Confidence Scores',
+                    description: 'Know when to trust AI and when to dig deeper'
+                  }
                 ].map((feature, i) => (
-                  <div
-                    key={i}
-                    className="glass rounded-xl p-6 space-y-3 group hover:bg-slate-800/40 transition-colors"
-                  >
+                  <div key={i} className="glass rounded-xl p-6 space-y-3 group hover:bg-slate-800/40 transition-colors">
                     <div className="p-3 bg-primary-500/10 rounded-lg w-fit group-hover:bg-primary-500/20 transition-colors">
                       <feature.icon className="w-6 h-6 text-primary-500" />
                     </div>
@@ -213,22 +206,20 @@ export default function Home() {
                     Previous Questions
                   </h3>
                   <div className="space-y-3">
-                    {history
-                      .slice(0, -1)
-                      .reverse()
-                      .map((q) => (
-                        <div
-                          key={q.id}
-                          className="glass rounded-lg p-4 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-                        >
-                          <p className="text-sm text-slate-300">{q.text}</p>
-                          {q.response && (
-                            <p className="text-xs text-slate-500 mt-1">
-                              Confidence: {q.response.confidence}%
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                    {history.slice(0, -1).reverse().map((q) => (
+                      <div
+                        key={q.id}
+                        onClick={() => setCurrentQuestion(q)}
+                        className="glass rounded-lg p-4 opacity-60 hover:opacity-100 transition-all cursor-pointer hover:border-primary-500 border border-transparent"
+                      >
+                        <p className="text-sm text-slate-300">{q.text}</p>
+                        {q.response && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Confidence: {q.response.confidence}%
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -237,5 +228,5 @@ export default function Home() {
         </main>
       </div>
     </div>
-  );
+  )
 }

@@ -3,9 +3,14 @@
 import { useCallback, useState } from "react";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { parseCSV, parseJSON } from "@/lib/dataParser";
 import { ParsedData } from "@/lib/type";
-
+import {
+  parseCSV,
+  parseJSON,
+  parseExcel,
+  parsePDF,
+  parseImage,
+} from "@/lib/fileParser";
 
 interface FileUploadProps {
   onDataParsed: (data: ParsedData) => void;
@@ -15,38 +20,74 @@ export default function FileUpload({ onDataParsed }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState("");
 
-  const handleFile = async (file: File) => {
-    setError(null);
-    setIsProcessing(true);
+  const handleFile = useCallback(
+    async (file: File) => {
+      setError(null);
+      setIsProcessing(true);
 
-    try {
-      if (file.name.endsWith(".csv")) {
-        const data = await parseCSV(file);
-        onDataParsed(data);
-      } else if (file.name.endsWith(".json")) {
-        const text = await file.text();
-        const data = parseJSON(text);
-        onDataParsed(data);
+      // Set appropriate message based on file type
+      const fileName = file.name.toLowerCase();
+      if (fileName.endsWith(".pdf")) {
+        setProcessingMessage("Extracting data from PDF...");
+      } else if (fileName.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)) {
+        setProcessingMessage("Performing OCR on image... (may take 30s)");
+      } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+        setProcessingMessage("Reading Excel file...");
+      } else if (fileName.endsWith(".csv")) {
+        setProcessingMessage("Parsing CSV...");
+      } else if (fileName.endsWith(".json")) {
+        setProcessingMessage("Parsing JSON...");
       } else {
-        setError("Please upload a CSV or JSON file");
+        setProcessingMessage("Processing file...");
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to parse file");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+      try {
+        // Route to appropriate parser
+        let data: ParsedData;
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFile(file);
-    }
-  }, []);
+        if (fileName.endsWith(".csv")) {
+          data = await parseCSV(file);
+        } else if (fileName.endsWith(".json")) {
+          const text = await file.text();
+          data = parseJSON(text);
+        } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+          data = await parseExcel(file);
+        } else if (fileName.endsWith(".pdf")) {
+          data = await parsePDF(file);
+        } else if (fileName.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)) {
+          data = await parseImage(file);
+        } else {
+          throw new Error(
+            "Unsupported file type. Please upload CSV, JSON, Excel, PDF, or Image files.",
+          );
+        }
+
+        onDataParsed(data);
+      } catch (err) {
+        console.error("File parsing error:", err);
+        setError(err instanceof Error ? err.message : "Failed to parse file");
+      } finally {
+        setIsProcessing(false);
+        setProcessingMessage("");
+      }
+    },
+    [onDataParsed],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        handleFile(file);
+      }
+    },
+    [handleFile],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -58,12 +99,15 @@ export default function FileUpload({ onDataParsed }: FileUploadProps) {
     setIsDragging(false);
   }, []);
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFile(file);
-    }
-  };
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFile(file);
+      }
+    },
+    [handleFile],
+  );
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -92,7 +136,7 @@ export default function FileUpload({ onDataParsed }: FileUploadProps) {
             id="file-upload"
             type="file"
             className="sr-only"
-            accept=".csv,.json"
+            accept=".csv,.json,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp"
             onChange={handleFileInput}
             disabled={isProcessing}
           />
@@ -114,13 +158,15 @@ export default function FileUpload({ onDataParsed }: FileUploadProps) {
 
             <div className="text-center space-y-2">
               <p className="text-lg font-display font-semibold text-slate-200">
-                {isProcessing ? "Processing..." : "Upload your data"}
+                {isProcessing ? processingMessage : "Upload your data"}
               </p>
               <p className="text-sm text-slate-400">
-                Drag & drop or click to select
+                {isProcessing
+                  ? "Please wait..."
+                  : "Drag & drop or click to select"}
               </p>
               <p className="text-xs text-slate-500 font-mono">
-                Supports CSV, JSON
+                CSV, Excel, PDF, JSON, or Images
               </p>
             </div>
 

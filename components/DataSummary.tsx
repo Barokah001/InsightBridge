@@ -3,10 +3,10 @@
 import { DataQualityIssue, ParsedData } from "@/lib/type";
 import { motion } from "framer-motion";
 import {
-  Database,
   AlertTriangle,
   CheckCircle2,
-  TrendingUp,
+  Database,
+  TrendingUp, 
 } from "lucide-react";
 
 interface DataSummaryProps {
